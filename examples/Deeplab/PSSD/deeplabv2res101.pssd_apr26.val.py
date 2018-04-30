@@ -35,8 +35,8 @@ lr_schedule = [(3, 1e-4), (7, 1e-5)]
 epoch_scale = 30
 max_epoch = 10
 lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
-batch_size = 1
-evaluate_every_n_epoch = 10
+batch_size = 12
+evaluate_every_n_epoch = 1
 
 
 class Model(ModelDesc):
@@ -103,7 +103,7 @@ class Model(ModelDesc):
 
             add_param_summary(('.*/W', ['histogram']))   # monitor W
             self.cost = tf.add_n(costs, name='cost')
-            #add_moving_summary(costs + [self.cost])
+            add_moving_summary(costs + [self.cost])
 
     def _get_optimizer(self):
         lr = tf.get_variable('learning_rate', initializer=first_batch_lr, trainable=False)
@@ -384,8 +384,8 @@ if __name__ == '__main__':
         proceed_validation(args)
     elif args.test:
         proceed_test(args)
-    #elif args.test_dir:
-    #    proceed_test_dir(args)
+    elif args.test_dir:
+        proceed_test_dir(args)
     else:
         config = get_config(args.base_dir, args.meta_dir,args.batch_size)
         if args.load:
