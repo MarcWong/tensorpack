@@ -35,7 +35,7 @@ lr_schedule = [(3, 1e-4), (7, 1e-5)]
 epoch_scale = 30
 max_epoch = 10
 lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
-batch_size = 12
+batch_size = 1
 evaluate_every_n_epoch = 1
 
 
@@ -103,7 +103,7 @@ class Model(ModelDesc):
 
             add_param_summary(('.*/W', ['histogram']))   # monitor W
             self.cost = tf.add_n(costs, name='cost')
-            add_moving_summary(costs + [self.cost])
+            #add_moving_summary(costs + [self.cost])
 
     def _get_optimizer(self):
         lr = tf.get_variable('learning_rate', initializer=first_batch_lr, trainable=False)
@@ -210,7 +210,7 @@ def proceed_validation(args, is_save = True, is_densecrf = False):
         output_names=['prob'])
     predictor = OfflinePredictor(pred_config)
     from tensorpack.utils.fs import mkdir_p
-    result_dir = "result/pssd_mar17"
+    result_dir = "result/pssd_apr26"
     #result_dir = "ningbo_validation"
     mkdir_p(result_dir)
     i = 1

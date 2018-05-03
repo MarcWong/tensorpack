@@ -35,7 +35,7 @@ lr_schedule = [(3, 1e-4), (7, 1e-5)]
 epoch_scale = 30
 max_epoch = 10
 lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
-batch_size = 1
+batch_size = 12
 evaluate_every_n_epoch = 10
 
 
@@ -210,7 +210,7 @@ def proceed_validation(args, is_save = True, is_densecrf = False):
         output_names=['prob'])
     predictor = OfflinePredictor(pred_config)
     from tensorpack.utils.fs import mkdir_p
-    result_dir = "result/pssd_mar17"
+    result_dir = "result/pssd_apr26"
     #result_dir = "ningbo_validation"
     mkdir_p(result_dir)
     i = 1
@@ -370,7 +370,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', help='fused output filename. default to out-fused.png')
     parser.add_argument('--validation', action='store_true', help='validate model on validation images')
     parser.add_argument('--test', action='store_true', help='generate test result')
-    parser.add_argument('--test_dir', default='/data1/dataset/m1-mar22-inference', help='generate test result')
+    parser.add_argument('--test_dir', default='/data1/dataset/PSSD-apr26-inference', help='generate test result')
     args = parser.parse_args()
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
