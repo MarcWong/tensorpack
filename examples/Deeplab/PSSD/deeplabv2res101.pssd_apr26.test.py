@@ -222,7 +222,7 @@ def proceed_validation(args, is_save = True, is_densecrf = False):
         def mypredictor(input_img):
             #input image: 1*H*W*3
             #output : H*W*C
-            output = predictor(input_img[np.newaxis, :, :, :])
+            output = predictor(input_img)
             return output[0][0]
         prediction = predict_scaler(image, mypredictor, scales=[0.5,0.75,1,1.25,1.5], classes=CLASS_NUM, tile_size=CROP_SIZE, is_densecrf = is_densecrf)
         prediction = np.argmax(prediction, axis=2)
@@ -368,8 +368,8 @@ if __name__ == '__main__':
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')
     parser.add_argument('--output', help='fused output filename. default to out-fused.png')
-    parser.add_argument('--validation', default="true", action='store_true', help='validate model on validation images')
-    parser.add_argument('--test', action='store_true', help='generate test result')
+    parser.add_argument('--validation', action='store_true', help='validate model on validation images')
+    parser.add_argument('--test', default="true", action='store_true', help='generate test result')
     parser.add_argument('--test_dir', default="/data1/dataset/slam", action='store_true', help='generate test result')
     args = parser.parse_args()
     if args.gpu:
@@ -380,12 +380,12 @@ if __name__ == '__main__':
         view_data(args.base_dir, args.meta_dir,args.batch_size)
     elif args.run:
         run(args.load, args.run, args.output)
-    elif args.validation:
-         proceed_validation(args)
+    # elif args.validation:
+    #     proceed_validation(args)
     # elif args.test:
     #     proceed_test(args)
-    #elif args.test_dir:
-    #    proceed_test_dir(args)
+    elif args.test_dir:
+        proceed_test_dir(args)
     # else:
     #     config = get_config(args.base_dir, args.meta_dir,args.batch_size)
     #     if args.load:
