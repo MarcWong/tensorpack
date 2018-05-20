@@ -30,13 +30,13 @@ CLASS_NUM = dataset.PSSD.class_num()
 CROP_SIZE = 1025#513
 IGNORE_LABEL = 255
 
-first_batch_lr = 2.5e-4
-lr_schedule = [(3, 1e-4), (7, 1e-5)]
+first_batch_lr = 1e-5
+lr_schedule = [(3, 1e-5), (7, 1e-6)]
 epoch_scale = 30
-max_epoch = 10
+max_epoch = 5
 lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
-batch_size = 1
-evaluate_every_n_epoch = 1
+batch_size =1
+evaluate_every_n_epoch = 10
 
 
 class Model(ModelDesc):
@@ -360,10 +360,10 @@ class CalculateMIoU(Callback):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', default="2", help='comma separated list of GPU(s) to use.')
-    parser.add_argument('--base_dir', default="/data1/dataset/PSSD-apr26-all", help='base dir')
-    parser.add_argument('--meta_dir', default="../metadata/pssd-all-apr26", help='meta dir')
-    parser.add_argument('--load', default="../resnet101.npz", help='load model')
+    parser.add_argument('--gpu', default="3", help='comma separated list of GPU(s) to use.')
+    parser.add_argument('--base_dir', default="/data1/dataset/PSSD-finetune", help='base dir')
+    parser.add_argument('--meta_dir', default="../metadata/pssd-finetune", help='meta dir')
+    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_apr26/model-29250", help='load model')
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')
@@ -384,8 +384,8 @@ if __name__ == '__main__':
         proceed_validation(args)
     elif args.test:
         proceed_test(args)
-    elif args.test_dir:
-        proceed_test_dir(args)
+    #elif args.test_dir:
+    #    proceed_test_dir(args)
     else:
         config = get_config(args.base_dir, args.meta_dir,args.batch_size)
         if args.load:
