@@ -259,7 +259,7 @@ def proceed_test(args,is_densecrf = False):
 
     import subprocess
 
-    logger.info("start validation....")
+    logger.info("start prediction....")
     _itr = ds.get_data()
     for i in tqdm(range(len(imglist))):
         image = next(_itr)
@@ -288,7 +288,7 @@ def proceed_test_dir(args):
     predictor = OfflinePredictor(pred_config)
 
     from tensorpack.utils.fs import mkdir_p
-    result_dir = "test-from-dir"
+    result_dir = "dalitang"
     visual_dir = os.path.join(result_dir,"visualization")
     final_dir = os.path.join(result_dir,"final")
     import shutil
@@ -358,17 +358,17 @@ class CalculateMIoU(Callback):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', default="0", help='comma separated list of GPU(s) to use.')
+    parser.add_argument('--gpu', default="1", help='comma separated list of GPU(s) to use.')
     parser.add_argument('--base_dir', default="/data1/dataset/PSSD-apr26-all", help='base dir')
     parser.add_argument('--meta_dir', default="../metadata/pssd-all-apr26", help='meta dir')
-    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_apr26/model-39300", help='load model')
+    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_apr26/model-21060", help='load model')
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')
     parser.add_argument('--output', help='fused output filename. default to out-fused.png')
     parser.add_argument('--validation', action='store_true', help='validate model on validation images')
     parser.add_argument('--test', default="true", action='store_true', help='generate test result')
-    parser.add_argument('--test_dir', default="/data1/dataset/slam", action='store_true', help='generate test result')
+    parser.add_argument('--test_dir', default="/data1/dataset/dalitang/src", action='store_true', help='generate test result')
     args = parser.parse_args()
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu

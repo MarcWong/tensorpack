@@ -358,10 +358,10 @@ class CalculateMIoU(Callback):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', default="0", help='comma separated list of GPU(s) to use.')
+    parser.add_argument('--gpu', default="1", help='comma separated list of GPU(s) to use.')
     parser.add_argument('--base_dir', default="/data1/dataset/PSSD-apr26-all", help='base dir')
     parser.add_argument('--meta_dir', default="../metadata/pssd-all-apr26", help='meta dir')
-    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_apr26/model-29250", help='load model')
+    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_apr26/model-21060", help='load model')
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')
