@@ -210,7 +210,7 @@ def proceed_validation(args, is_save = True, is_densecrf = False):
         output_names=['prob'])
     predictor = OfflinePredictor(pred_config)
     from tensorpack.utils.fs import mkdir_p
-    result_dir = "result/pssd_mar17"
+    result_dir = "result/pssd_apr26"
     #result_dir = "ningbo_validation"
     mkdir_p(result_dir)
     i = 1
@@ -305,7 +305,7 @@ def proceed_test_dir(args):
     def mypredictor(input_img):
         # input image: 1*H*W*3
         # output : H*W*C
-        output = predictor(input_img)
+        output = predictor(input_img[np.newaxis, :, :, :])
         return output[0][0]
 
     for i in tqdm(range(len(ll))):
@@ -361,17 +361,16 @@ class CalculateMIoU(Callback):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu', default="0", help='comma separated list of GPU(s) to use.')
-    parser.add_argument('--base_dir', default="/data1/dataset/m1-mar17-all", help='base dir')
-    parser.add_argument('--meta_dir', default="../metadata/pssd-m1-mar17", help='meta dir')
-    parser.add_argument('--load', default="../resnet101.npz", help='load model')
+    parser.add_argument('--base_dir', default="/data1/dataset/PSSD-apr26-all", help='base dir')
+    parser.add_argument('--meta_dir', default="../metadata/pssd-all-apr26", help='meta dir')
+    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_apr26/model-39300", help='load model')
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')
     parser.add_argument('--output', help='fused output filename. default to out-fused.png')
     parser.add_argument('--validation', action='store_true', help='validate model on validation images')
-    parser.add_argument('--test', action='store_true', help='generate test result')
-    parser.add_argument('--test_dir', action='store_true', help='generate test result')
-    parser.add_argument('--test_dir_path', default="/data1/slam", help='generate test result')
+    parser.add_argument('--test', default="true", action='store_true', help='generate test result')
+    parser.add_argument('--test_dir', default="/data1/dataset/slam", action='store_true', help='generate test result')
     args = parser.parse_args()
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -381,16 +380,16 @@ if __name__ == '__main__':
         view_data(args.base_dir, args.meta_dir,args.batch_size)
     elif args.run:
         run(args.load, args.run, args.output)
-    elif args.validation:
-        proceed_validation(args)
-    elif args.test:
-        proceed_test(args)
+    # elif args.validation:
+    #     proceed_validation(args)
+    # elif args.test:
+    #     proceed_test(args)
     elif args.test_dir:
         proceed_test_dir(args)
-    else:
-        config = get_config(args.base_dir, args.meta_dir,args.batch_size)
-        if args.load:
-            config.session_init = get_model_loader(args.load)
-        launch_train_with_config(
-            config,
-            SyncMultiGPUTrainer(max(get_nr_gpu(), 1)))
+    # else:
+    #     config = get_config(args.base_dir, args.meta_dir,args.batch_size)
+    #     if args.load:
+    #         config.session_init = get_model_loader(args.load)
+    #     launch_train_with_config(
+    #         config,
+    #         SyncMultiGPUTrainer(max(get_nr_gpu(), 1)))

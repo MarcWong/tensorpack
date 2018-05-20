@@ -222,9 +222,13 @@ def proceed_validation(args, is_save = True, is_densecrf = False):
         def mypredictor(input_img):
             #input image: 1*H*W*3
             #output : H*W*C
-            output = predictor(input_img)
+            output = predictor(input_img[np.newaxis, :, :, :])
             return output[0][0]
-        prediction = predict_scaler(image, mypredictor, scales=[0.5,0.75,1,1.25,1.5], classes=CLASS_NUM, tile_size=CROP_SIZE, is_densecrf = is_densecrf)
+        prediction = predict_scaler(image, mypredictor,
+                                    scales=[0.5,0.75,1,1.25,1.5],
+                                    classes=CLASS_NUM,
+                                    tile_size=CROP_SIZE,
+                                    is_densecrf = is_densecrf)
         prediction = np.argmax(prediction, axis=2)
         stat.feed(prediction, label)
 
