@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-# File: deeplabv2.py
-# Author: Tao Hu <taohu620@gmail.com>
 
 import cv2
 import tensorflow as tf
