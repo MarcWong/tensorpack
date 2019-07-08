@@ -1,6 +1,6 @@
 numpy
 six
-cv2
+opencv-python
 termcolor>=1.1
 tabulate>=0.7.7
 tqdm>4.11.1
