@@ -196,7 +196,6 @@ def run(model_path, image_path, output):
 
 def proceed_validation(args, is_save = True, is_densecrf = False):
     import cv2
-    #name = "ningbo_val"
     name = "val"
     ds = dataset.PSSD( args.base_dir, args.meta_dir, name)
     ds = BatchData(ds, 1)
@@ -208,8 +207,7 @@ def proceed_validation(args, is_save = True, is_densecrf = False):
         output_names=['prob'])
     predictor = OfflinePredictor(pred_config)
     from tensorpack.utils.fs import mkdir_p
-    result_dir = "result/pssd_apr26"
-    #result_dir = "ningbo_validation"
+    result_dir = "result/validation"
     mkdir_p(result_dir)
     i = 1
     stat = MIoUStatistics(CLASS_NUM)
@@ -359,17 +357,17 @@ class CalculateMIoU(Callback):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', default="1", help='comma separated list of GPU(s) to use.')
-    parser.add_argument('--base_dir', default="/data1/dataset/PSSD-apr26-all", help='base dir')
-    parser.add_argument('--meta_dir', default="../metadata/pssd-all-apr26", help='meta dir')
-    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_train_0522/model-11700", help='load model')
+    parser.add_argument('--gpu', default="0", help='comma separated list of GPU(s) to use.')
+    parser.add_argument('--base_dir', default="/data1/Dataset/UDD", help='base dir')
+    parser.add_argument('--meta_dir', default="../metadata/UDD", help='meta dir')
+    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_train_0522/model-13500", help='load model')
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')
     parser.add_argument('--output', help='fused output filename. default to out-fused.png')
     parser.add_argument('--validation', default="true", action='store_true', help='validate model on validation images')
     parser.add_argument('--test', action='store_true', help='generate test result')
-    parser.add_argument('--test_dir', default="/data1/dataset/slam", action='store_true', help='generate test result')
+    parser.add_argument('--test_dir', default="/data1/Dataset/UDD", action='store_true', help='generate test result')
     args = parser.parse_args()
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu

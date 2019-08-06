@@ -118,7 +118,6 @@ train/src/DJI_0388.JPG train/gt/DJI_0388.png
 train/src/DJI_00576.JPG train/gt/DJI_00576.png
 train/src/0119_4img3041.JPG train/gt/0119_4img3041.png
 train/src/DJI_0517.JPG train/gt/DJI_0517.png
-train/src/DJI_0373_heda.JPG train/gt/DJI_0373_heda.png
 train/src/DJI_0548_heda.JPG train/gt/DJI_0548_heda.png
 train/src/DJI_00539.JPG train/gt/DJI_00539.png
 train/src/DJI_0409_heda.JPG train/gt/DJI_0409_heda.png
