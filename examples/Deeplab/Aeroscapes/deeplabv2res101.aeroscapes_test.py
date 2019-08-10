@@ -25,17 +25,19 @@ from resnet_model import (
 
 
 CLASS_NUM = dataset.Aeroscapes.class_num()
-CROP_SIZE = 513#1025
+CROP_SIZE = 513
 IGNORE_LABEL = 255
 
 first_batch_lr = 2.5e-4
 lr_schedule = [(3, 1e-4), (7, 1e-5)]
 epoch_scale = 30
-max_epoch = 10
+max_epoch = 1
 lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
-batch_size = 6
-evaluate_every_n_epoch = 2
+batch_size = 1
+evaluate_every_n_epoch = 1
 
+# TEST_DIR = '/data1/Dataset/tanksandtemples/Family'
+TEST_DIR = '/data1/Dataset/UDD/train'
 
 class Model(ModelDesc):
 
@@ -113,7 +115,7 @@ class Model(ModelDesc):
 
 def get_data(name, base_dir, meta_dir, batch_size):
     isTrain = True if 'train' in name else False
-    ds = dataset.Aeroscapes(base_dir, meta_dir, name, shuffle=True)
+    ds = dataset.PSSD(base_dir, meta_dir, name, shuffle=True)
 
 
     if isTrain:#special augmentation
@@ -163,7 +165,7 @@ def get_config( base_dir, meta_dir, batch_size):
             ModelSaver(),
             ScheduledHyperParamSetter('learning_rate', lr_schedule),
             HumanHyperParamSetter('learning_rate'),
-            #PeriodicTrigger(CalculateMIoU(CLASS_NUM), every_k_epochs=evaluate_every_n_epoch),
+            PeriodicTrigger(CalculateMIoU(CLASS_NUM), every_k_epochs=evaluate_every_n_epoch),
             ProgressBar(["cross_entropy_loss","cost","wd_cost"])#uncomment it to debug for every step
         ],
         model=Model(),
@@ -195,8 +197,10 @@ def run(model_path, image_path, output):
         cv2.imwrite(output, pred * 255)
 
 def proceed_validation(args, is_save = True, is_densecrf = False):
+    import cv2
+    #name = "ningbo_val"
     name = "val"
-    ds = dataset.Aeroscapes( args.base_dir, args.meta_dir, name)
+    ds = dataset.PSSD( args.base_dir, args.meta_dir, name)
     ds = BatchData(ds, 1)
 
     pred_config = PredictConfig(
@@ -206,7 +210,7 @@ def proceed_validation(args, is_save = True, is_densecrf = False):
         output_names=['prob'])
     predictor = OfflinePredictor(pred_config)
     from tensorpack.utils.fs import mkdir_p
-    result_dir = "result/aeroscapes"
+    result_dir = "result/pssd_apr26"
     mkdir_p(result_dir)
     i = 1
     stat = MIoUStatistics(CLASS_NUM)
@@ -234,6 +238,86 @@ def proceed_validation(args, is_save = True, is_densecrf = False):
     logger.info("accuracy: {}".format(stat.accuracy))
 
 
+def proceed_test(args,is_densecrf = False):
+    import cv2
+    ds = dataset.Aerial(args.base_dir, args.meta_dir, "test")
+    imglist = ds.imglist
+    ds = BatchData(ds, 1)
+
+    pred_config = PredictConfig(
+        model=Model(),
+        session_init=get_model_loader(args.load),
+        input_names=['image'],
+        output_names=['prob'])
+    predictor = OfflinePredictor(pred_config)
+
+    from tensorpack.utils.fs import mkdir_p
+    result_dir = "test-{}".format(os.path.basename(__file__).rstrip(".py"))
+    import shutil
+    shutil.rmtree(result_dir, ignore_errors=True)
+    mkdir_p(result_dir)
+    mkdir_p(os.path.join(result_dir,"compressed"))
+
+    import subprocess
+
+    logger.info("start prediction....")
+    _itr = ds.get_data()
+    for i in tqdm(range(len(imglist))):
+        image = next(_itr)
+        name = os.path.basename(imglist[i]).rstrip(".tif")
+        image = np.squeeze(image)
+        prediction = predict_scaler(image, predictor, scales=[0.9,1,1.1], classes=CLASS_NUM, tile_size=CROP_SIZE, is_densecrf = is_densecrf)
+        prediction = np.argmax(prediction, axis=2)
+        prediction = prediction*255 # to 0-255
+        file_path = os.path.join(result_dir,"{}.tif".format(name))
+        compressed_file_path = os.path.join(result_dir, "compressed","{}.tif".format(name))
+        cv2.imwrite(file_path, prediction)
+        command = "gdal_translate --config GDAL_PAM_ENABLED NO -co COMPRESS=CCITTFAX4 -co NBITS=1 " + file_path + " " + compressed_file_path
+        print command
+        subprocess.call(command, shell=True)
+
+
+def proceed_test_dir(args):
+    import cv2
+    ll = os.listdir(args.test_dir)
+
+    pred_config = PredictConfig(
+        model=Model(),
+        session_init=get_model_loader(args.load),
+        input_names=['image'],
+        output_names=['prob'])
+    predictor = OfflinePredictor(pred_config)
+
+    from tensorpack.utils.fs import mkdir_p
+    visual_dir = os.path.join(TEST_DIR,"visualization")
+    final_dir = os.path.join(TEST_DIR,"final")
+    # import shutil
+    # shutil.rmtree(result_dir, ignore_errors=True)
+    mkdir_p(visual_dir)
+    mkdir_p(final_dir)
+
+
+    logger.info("start validation....")
+
+    def mypredictor(input_img):
+        # input image: 1*H*W*3
+        # output : H*W*C
+        output = predictor(input_img[np.newaxis, :, :, :])
+        return output[0][0]
+
+    for i in tqdm(range(len(ll))):
+        filename = ll[i]
+        image = cv2.imread(os.path.join(args.test_dir,filename))
+
+	prediction = predict_scaler(image, mypredictor, scales=[0.5,0.75, 1, 1.25, 1.5], classes=CLASS_NUM, tile_size=CROP_SIZE, is_densecrf = False)
+        prediction = np.argmax(prediction, axis=2)
+        cv2.imwrite(os.path.join(final_dir,"{}".format(filename)), prediction)
+        cv2.imwrite(os.path.join(visual_dir, "{}".format(filename)), np.concatenate((image, visualize_label(prediction)), axis=1))
+
+
+
+
+
 class CalculateMIoU(Callback):
     def __init__(self, nb_class):
         self.nb_class = nb_class
@@ -252,15 +336,15 @@ class CalculateMIoU(Callback):
 
         self.stat = MIoUStatistics(self.nb_class)
 
+        def mypredictor(input_img):
+            # input image: 1*H*W*3
+            # output : H*W*C
+            output = self.pred(input_img)
+            return output[0][0]
+
         for image, label in tqdm(self.val_ds.get_data()):
             label = np.squeeze(label)
             image = np.squeeze(image)
-            def mypredictor(input_img):
-                # input image: 1*H*W*3
-                # output : H*W*C
-                output = self.pred(input_img[np.newaxis, :, :, :])
-                return output[0][0]
-
             prediction = predict_scaler(image, mypredictor, scales=[0.5,0.75,1,1.25,1.5], classes=CLASS_NUM, tile_size=CROP_SIZE,
                            is_densecrf=False)
             prediction = np.argmax(prediction, axis=2)
@@ -274,17 +358,17 @@ class CalculateMIoU(Callback):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', default="0,1,2,3,4,5", help='comma separated list of GPU(s) to use.')
-    parser.add_argument('--base_dir', default="/data3/Dataset/aeroscapes", help='base dir')
+    parser.add_argument('--gpu', default="0", help='comma separated list of GPU(s) to use.')
+    parser.add_argument('--base_dir', default="/data1/Dataset/aeroscapes", help='base dir')
     parser.add_argument('--meta_dir', default="../metadata/Aeroscapes", help='meta dir')
-    parser.add_argument('--load', default="../resnet101.npz", help='load model')
+    parser.add_argument('--load', default="train_log/deeplabv2res101.aeroscapes_train/model-130800", help='load model')
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')
     parser.add_argument('--output', help='fused output filename. default to out-fused.png')
     parser.add_argument('--validation', action='store_true', help='validate model on validation images')
     parser.add_argument('--test', action='store_true', help='generate test result')
-    parser.add_argument('--test_dir', default='/data3/Dataset/aeroscapes', help='generate test result')
+    parser.add_argument('--test_dir', default=TEST_DIR+'/images', help='generate test result')
     args = parser.parse_args()
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -294,12 +378,16 @@ if __name__ == '__main__':
         view_data(args.base_dir, args.meta_dir,args.batch_size)
     elif args.run:
         run(args.load, args.run, args.output)
-    elif args.validation:
-        proceed_validation(args)
-    else:
-        config = get_config(args.base_dir, args.meta_dir,args.batch_size)
-        if args.load:
-            config.session_init = get_model_loader(args.load)
-        launch_train_with_config(
-            config,
-            SyncMultiGPUTrainer(max(get_nr_gpu(), 1)))
+    # elif args.validation:
+    #     proceed_validation(args)
+    # elif args.test:
+    #     proceed_test(args)
+    elif args.test_dir:
+        proceed_test_dir(args)
+    # else:
+    #     config = get_config(args.base_dir, args.meta_dir,args.batch_size)
+    #     if args.load:
+    #         config.session_init = get_model_loader(args.load)
+    #     launch_train_with_config(
+    #         config,
+    #         SyncMultiGPUTrainer(max(get_nr_gpu(), 1)))
