@@ -37,7 +37,7 @@ batch_size = 1
 evaluate_every_n_epoch = 1
 
 # TEST_DIR = '/data1/Dataset/tanksandtemples/Family'
-TEST_DIR = '/data1/Dataset/UDD/train'
+TEST_DIR = '/data1/Dataset/pku/m1'
 
 class Model(ModelDesc):
 
@@ -291,13 +291,15 @@ def proceed_test_dir(args):
     from tensorpack.utils.fs import mkdir_p
     visual_dir = os.path.join(TEST_DIR,"visualization")
     final_dir = os.path.join(TEST_DIR,"final")
+    predict_dir = os.path.join(TEST_DIR,"prediction")
     # import shutil
     # shutil.rmtree(result_dir, ignore_errors=True)
     mkdir_p(visual_dir)
     mkdir_p(final_dir)
+    mkdir_p(predict_dir)
 
 
-    logger.info("start validation....")
+    logger.info("start prediction_dir....")
 
     def mypredictor(input_img):
         # input image: 1*H*W*3
@@ -310,7 +312,9 @@ def proceed_test_dir(args):
         image = cv2.imread(os.path.join(args.test_dir,filename))
 
 	prediction = predict_scaler(image, mypredictor, scales=[0.5,0.75, 1, 1.25, 1.5], classes=CLASS_NUM, tile_size=CROP_SIZE, is_densecrf = False)
+        np.save(os.path.join(predict_dir,"{}.npy".format(i)),prediction)
         prediction = np.argmax(prediction, axis=2)
+        # print('prediction:', prediction.shape)
         cv2.imwrite(os.path.join(final_dir,"{}".format(filename)), prediction)
         cv2.imwrite(os.path.join(visual_dir, "{}".format(filename)), np.concatenate((image, visualize_label(prediction)), axis=1))
 
@@ -361,7 +365,8 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default="0", help='comma separated list of GPU(s) to use.')
     parser.add_argument('--base_dir', default="/data1/Dataset/aeroscapes", help='base dir')
     parser.add_argument('--meta_dir', default="../metadata/Aeroscapes", help='meta dir')
-    parser.add_argument('--load', default="train_log/deeplabv2res101.aeroscapes_train/model-130800", help='load model')
+    # parser.add_argument('--load', default="train_log/deeplabv2res101.aeroscapes_train/model-130800", help='load model')
+    parser.add_argument('--load', default="checkpoint/model-284490", help='load model')    
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')

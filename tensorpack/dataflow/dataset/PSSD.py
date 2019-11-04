@@ -45,7 +45,7 @@ class PSSD(RNGDataFlow):
 
     @staticmethod
     def class_num():
-        return 3
+        return 5
 
     def get_data(self):
         idxs = np.arange(len(self.imglist))
