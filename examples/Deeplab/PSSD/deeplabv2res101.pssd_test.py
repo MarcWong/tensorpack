@@ -36,6 +36,7 @@ lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
 batch_size = 1
 evaluate_every_n_epoch = 1
 
+TEST_DIR="/data1/Dataset/pku/library"
 
 class Model(ModelDesc):
 
@@ -196,7 +197,6 @@ def run(model_path, image_path, output):
 
 def proceed_validation(args, is_save = True, is_densecrf = False):
     import cv2
-    #name = "ningbo_val"
     name = "val"
     ds = dataset.PSSD( args.base_dir, args.meta_dir, name)
     ds = BatchData(ds, 1)
@@ -209,7 +209,6 @@ def proceed_validation(args, is_save = True, is_densecrf = False):
     predictor = OfflinePredictor(pred_config)
     from tensorpack.utils.fs import mkdir_p
     result_dir = "result/pssd_apr26"
-    #result_dir = "ningbo_validation"
     mkdir_p(result_dir)
     i = 1
     stat = MIoUStatistics(CLASS_NUM)
@@ -278,7 +277,6 @@ def proceed_test(args,is_densecrf = False):
 
 def proceed_test_dir(args):
     import cv2
-    ll = os.listdir(args.test_dir)
 
     pred_config = PredictConfig(
         model=Model(),
@@ -288,15 +286,17 @@ def proceed_test_dir(args):
     predictor = OfflinePredictor(pred_config)
 
     from tensorpack.utils.fs import mkdir_p
-    result_dir = "result/test"
-    visual_dir = os.path.join(result_dir,"visualization")
-    final_dir = os.path.join(result_dir,"final")
+    src_dir = os.path.join(TEST_DIR,"images")
+    visual_dir = os.path.join(TEST_DIR,"visualization")
+    final_dir = os.path.join(TEST_DIR,"final")
     import shutil
-    shutil.rmtree(result_dir, ignore_errors=True)
-    mkdir_p(result_dir)
+    shutil.rmtree(visual_dir, ignore_errors=True)
+    shutil.rmtree(final_dir, ignore_errors=True)
+
     mkdir_p(visual_dir)
     mkdir_p(final_dir)
 
+    ll = os.listdir(src_dir)
 
     logger.info("start validation....")
 
@@ -308,7 +308,8 @@ def proceed_test_dir(args):
 
     for i in tqdm(range(len(ll))):
         filename = ll[i]
-        image = cv2.imread(os.path.join(args.test_dir,filename))
+        print(os.path.join(src_dir,filename))
+        image = cv2.imread(os.path.join(src_dir,filename))
 
 	prediction = predict_scaler(image, mypredictor, scales=[0.5,0.75, 1, 1.25, 1.5], classes=CLASS_NUM, tile_size=CROP_SIZE, is_densecrf = False)
         prediction = np.argmax(prediction, axis=2)
@@ -362,14 +363,14 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default="0", help='comma separated list of GPU(s) to use.')
     parser.add_argument('--base_dir', default="/data1/Dataset/UDD", help='base dir')
     parser.add_argument('--meta_dir', default="../metadata/UDD", help='meta dir')
-    parser.add_argument('--load', default="checkpoint/model-7800", help='load model')
+    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_train/model-6000", help='load model')
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')
     parser.add_argument('--output', help='fused output filename. default to out-fused.png')
     parser.add_argument('--validation', action='store_true', help='validate model on validation images')
     parser.add_argument('--test', action='store_true', help='generate test result')
-    parser.add_argument('--test_dir', default='/data1/Dataset/Eth3d/multi_view_training_dslr_undistorted/courtyard/images', help='generate test result')
+    parser.add_argument('--test_dir', default=TEST_DIR, help='generate test result')
     args = parser.parse_args()
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
