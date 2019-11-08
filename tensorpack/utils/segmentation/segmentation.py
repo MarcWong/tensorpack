@@ -14,7 +14,7 @@ from tensorpack.utils.palette import PALETTE_RGB
 __all__ = ['update_confusion_matrix', 'predict_slider']
 
 # Colour map. #BGR order.
-label_colours = [(0,128,0),(0,0,128),(128,0,0),(128,128,0),(0,0,0)
+label_colours = [(0,128,0),(0,0,128),(128,0,0),(0,128,128),(0,0,0)
                 # 0=tree, 1=building, 2=road 3=vehicle, 4=other
                 ,(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0)
                 ,(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0)
@@ -315,7 +315,7 @@ def predict_slider(full_image, predictor, classes, tile_size, overlap = 1.0/3):
 def predict_scaler(full_image, predictor, scales, classes, tile_size, is_densecrf,overlap=1.0/3):
     """  scaler is only respnsible for generate multi scale input for slider  """
 
-    full_probs = np.zeros((full_image.shape[0], full_image.shape[1], classes))
+    full_probs = np.zeros((full_image.shape[0], full_image.shape[1], classes)).astype(np.float32)
     h_ori, w_ori = full_image.shape[:2]
     for scale in scales:
         scaled_img = cv2.resize(full_image, (int(scale*w_ori), int(scale*h_ori)))

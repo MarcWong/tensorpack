@@ -36,7 +36,7 @@ lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
 batch_size = 1
 evaluate_every_n_epoch = 1
 
-TEST_DIR="/data1/Dataset/pku/library"
+TEST_DIR="/data1/Dataset/pku/m1_resized"
 
 class Model(ModelDesc):
 
@@ -289,12 +289,15 @@ def proceed_test_dir(args):
     src_dir = os.path.join(TEST_DIR,"images")
     visual_dir = os.path.join(TEST_DIR,"visualization")
     final_dir = os.path.join(TEST_DIR,"final")
+    predict_dir = os.path.join(TEST_DIR,"prediction")
     import shutil
     shutil.rmtree(visual_dir, ignore_errors=True)
     shutil.rmtree(final_dir, ignore_errors=True)
+    shutil.rmtree(predict_dir, ignore_errors=True)
 
     mkdir_p(visual_dir)
     mkdir_p(final_dir)
+    mkdir_p(predict_dir)
 
     ll = os.listdir(src_dir)
 
@@ -308,10 +311,10 @@ def proceed_test_dir(args):
 
     for i in tqdm(range(len(ll))):
         filename = ll[i]
-        print(os.path.join(src_dir,filename))
         image = cv2.imread(os.path.join(src_dir,filename))
 
 	prediction = predict_scaler(image, mypredictor, scales=[0.5,0.75, 1, 1.25, 1.5], classes=CLASS_NUM, tile_size=CROP_SIZE, is_densecrf = False)
+        np.save(os.path.join(predict_dir,"{}".format(filename.replace(".JPG",".npy"))), prediction)
         prediction = np.argmax(prediction, axis=2)
         cv2.imwrite(os.path.join(final_dir,"{}".format(filename)), prediction)
         cv2.imwrite(os.path.join(visual_dir, "{}".format(filename)), np.concatenate((image, visualize_label(prediction)), axis=1))
@@ -360,10 +363,10 @@ class CalculateMIoU(Callback):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', default="0", help='comma separated list of GPU(s) to use.')
+    parser.add_argument('--gpu', default="1", help='comma separated list of GPU(s) to use.')
     parser.add_argument('--base_dir', default="/data1/Dataset/UDD", help='base dir')
     parser.add_argument('--meta_dir', default="../metadata/UDD", help='meta dir')
-    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_train/model-6000", help='load model')
+    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_train/model-27000", help='load model')
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')

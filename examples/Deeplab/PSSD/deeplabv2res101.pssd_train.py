@@ -31,7 +31,7 @@ IGNORE_LABEL = 255
 first_batch_lr = 2.5e-4
 lr_schedule = [(3, 1e-4), (7, 1e-5)]
 epoch_scale = 30
-max_epoch = 90
+max_epoch = 20
 lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
 batch_size = 6
 evaluate_every_n_epoch = 2
@@ -280,8 +280,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default="0,1", help='comma separated list of GPU(s) to use.')
     parser.add_argument('--base_dir', default="/data1/Dataset/UDD5", help='base dir')
     parser.add_argument('--meta_dir', default="../metadata/UDD", help='meta dir')
-    # parser.add_argument('--load', default="../resnet101.npz", help='load model')
-    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_train/model-6000", help='load model')
+    parser.add_argument('--load', default="../resnet101.npz", help='load model')
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')
