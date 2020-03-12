@@ -36,7 +36,8 @@ lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
 batch_size = 1
 evaluate_every_n_epoch = 1
 
-TEST_DIR="/data1/Dataset/pku/m1_resized"
+#　TEST_DIR="/data1/Dataset/ISPRS/UAV_Verwaltung"
+TEST_DIR="/data1/Dataset/Semantic/dalitang"
 
 class Model(ModelDesc):
 
@@ -195,86 +196,6 @@ def run(model_path, image_path, output):
         pred = outputs[5][0]
         cv2.imwrite(output, pred * 255)
 
-def proceed_validation(args, is_save = True, is_densecrf = False):
-    import cv2
-    name = "val"
-    ds = dataset.PSSD( args.base_dir, args.meta_dir, name)
-    ds = BatchData(ds, 1)
-
-    pred_config = PredictConfig(
-        model=Model(),
-        session_init=get_model_loader(args.load),
-        input_names=['image'],
-        output_names=['prob'])
-    predictor = OfflinePredictor(pred_config)
-    from tensorpack.utils.fs import mkdir_p
-    result_dir = "result/pssd_apr26"
-    mkdir_p(result_dir)
-    i = 1
-    stat = MIoUStatistics(CLASS_NUM)
-    logger.info("start validation....")
-    for image, label in tqdm(ds.get_data()):
-        label = np.squeeze(label)
-        image = np.squeeze(image)
-        def mypredictor(input_img):
-            #input image: 1*H*W*3
-            #output : H*W*C
-            output = predictor(input_img)
-            return output[0][0]
-        prediction = predict_scaler(image, mypredictor, scales=[0.5,0.75,1,1.25,1.5], classes=CLASS_NUM, tile_size=CROP_SIZE, is_densecrf = is_densecrf)
-        prediction = np.argmax(prediction, axis=2)
-        stat.feed(prediction, label)
-
-        if is_save:
-            cv2.imwrite(os.path.join(result_dir,"{}.png".format(i)),
-                        np.concatenate((image, visualize_label(label), visualize_label(prediction)), axis=1))
-            #imwrite_grid(image,label,prediction, border=512, prefix_dir=result_dir, imageId = i)
-        i += 1
-
-    logger.info("mIoU: {}".format(stat.mIoU))
-    logger.info("mean_accuracy: {}".format(stat.mean_accuracy))
-    logger.info("accuracy: {}".format(stat.accuracy))
-
-
-def proceed_test(args,is_densecrf = False):
-    import cv2
-    ds = dataset.Aerial(args.base_dir, args.meta_dir, "test")
-    imglist = ds.imglist
-    ds = BatchData(ds, 1)
-
-    pred_config = PredictConfig(
-        model=Model(),
-        session_init=get_model_loader(args.load),
-        input_names=['image'],
-        output_names=['prob'])
-    predictor = OfflinePredictor(pred_config)
-
-    from tensorpack.utils.fs import mkdir_p
-    result_dir = "test-{}".format(os.path.basename(__file__).rstrip(".py"))
-    import shutil
-    shutil.rmtree(result_dir, ignore_errors=True)
-    mkdir_p(result_dir)
-    mkdir_p(os.path.join(result_dir,"compressed"))
-
-    import subprocess
-
-    logger.info("start prediction....")
-    _itr = ds.get_data()
-    for i in tqdm(range(len(imglist))):
-        image = next(_itr)
-        name = os.path.basename(imglist[i]).rstrip(".tif")
-        image = np.squeeze(image)
-        prediction = predict_scaler(image, predictor, scales=[0.9,1,1.1], classes=CLASS_NUM, tile_size=CROP_SIZE, is_densecrf = is_densecrf)
-        prediction = np.argmax(prediction, axis=2)
-        prediction = prediction*255 # to 0-255
-        file_path = os.path.join(result_dir,"{}.tif".format(name))
-        compressed_file_path = os.path.join(result_dir, "compressed","{}.tif".format(name))
-        cv2.imwrite(file_path, prediction)
-        command = "gdal_translate --config GDAL_PAM_ENABLED NO -co COMPRESS=CCITTFAX4 -co NBITS=1 " + file_path + " " + compressed_file_path
-        print command
-        subprocess.call(command, shell=True)
-
-
 def proceed_test_dir(args):
     import cv2
 
@@ -301,7 +222,7 @@ def proceed_test_dir(args):
 
     ll = os.listdir(src_dir)
 
-    logger.info("start validation....")
+    logger.info("start forwarding....")
 
     def mypredictor(input_img):
         # input image: 1*H*W*3
@@ -318,46 +239,6 @@ def proceed_test_dir(args):
         prediction = np.argmax(prediction, axis=2)
         cv2.imwrite(os.path.join(final_dir,"{}".format(filename)), prediction)
         cv2.imwrite(os.path.join(visual_dir, "{}".format(filename)), np.concatenate((image, visualize_label(prediction)), axis=1))
-
-
-
-
-
-class CalculateMIoU(Callback):
-    def __init__(self, nb_class):
-        self.nb_class = nb_class
-
-    def _setup_graph(self):
-        self.pred = self.trainer.get_predictor(
-            ['image'], ['prob'])
-
-    def _before_train(self):
-        pass
-
-    def _trigger(self):
-        global args
-        self.val_ds = get_data('val', args.base_dir, args.meta_dir, 1)
-        self.val_ds.reset_state()
-
-        self.stat = MIoUStatistics(self.nb_class)
-
-        def mypredictor(input_img):
-            # input image: 1*H*W*3
-            # output : H*W*C
-            output = self.pred(input_img)
-            return output[0][0]
-
-        for image, label in tqdm(self.val_ds.get_data()):
-            label = np.squeeze(label)
-            image = np.squeeze(image)
-            prediction = predict_scaler(image, mypredictor, scales=[0.5,0.75,1,1.25,1.5], classes=CLASS_NUM, tile_size=CROP_SIZE,
-                           is_densecrf=False)
-            prediction = np.argmax(prediction, axis=2)
-            self.stat.feed(prediction, label)
-
-        self.trainer.monitors.put_scalar("mIoU", self.stat.mIoU)
-        self.trainer.monitors.put_scalar("mean_accuracy", self.stat.mean_accuracy)
-        self.trainer.monitors.put_scalar("accuracy", self.stat.accuracy)
 
 
 
@@ -383,16 +264,5 @@ if __name__ == '__main__':
         view_data(args.base_dir, args.meta_dir,args.batch_size)
     elif args.run:
         run(args.load, args.run, args.output)
-    # elif args.validation:
-    #     proceed_validation(args)
-    # elif args.test:
-    #     proceed_test(args)
     elif args.test_dir:
         proceed_test_dir(args)
-    # else:
-    #     config = get_config(args.base_dir, args.meta_dir,args.batch_size)
-    #     if args.load:
-    #         config.session_init = get_model_loader(args.load)
-    #     launch_train_with_config(
-    #         config,
-    #         SyncMultiGPUTrainer(max(get_nr_gpu(), 1)))

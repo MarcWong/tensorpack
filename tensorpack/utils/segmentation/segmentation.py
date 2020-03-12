@@ -14,8 +14,8 @@ from tensorpack.utils.palette import PALETTE_RGB
 __all__ = ['update_confusion_matrix', 'predict_slider']
 
 # Colour map. #BGR order.
-label_colours = [(0,128,0),(0,0,128),(128,0,0),(0,128,128),(0,0,0)
-                # 0=tree, 1=building, 2=road 3=vehicle, 4=other
+label_colours = [(35,142,107),(70,70,70),(128,64,128),(142,0,0),(0,0,0)
+                # 0=vegetarian, 1=building, 2=road 3=vehicle, 4=other
                 ,(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0)
                 ,(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0)
                 ,(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0)]

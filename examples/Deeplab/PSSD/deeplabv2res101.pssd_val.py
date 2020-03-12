@@ -36,6 +36,7 @@ lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
 batch_size = 1
 evaluate_every_n_epoch = 1
 
+TEST_DIR="/data1/Dataset/Seg/UDD5/val"
 
 class Model(ModelDesc):
 
@@ -197,7 +198,7 @@ def run(model_path, image_path, output):
 def proceed_validation(args, is_save = True, is_densecrf = False):
     import cv2
     name = "val"
-    ds = dataset.PSSD( args.base_dir, args.meta_dir, name)
+    ds = dataset.PSSD( args.test_dir, args.meta_dir, name)
     ds = BatchData(ds, 1)
 
     pred_config = PredictConfig(
@@ -275,47 +276,6 @@ def proceed_test(args,is_densecrf = False):
         subprocess.call(command, shell=True)
 
 
-def proceed_test_dir(args):
-    import cv2
-    ll = os.listdir(args.test_dir)
-
-    pred_config = PredictConfig(
-        model=Model(),
-        session_init=get_model_loader(args.load),
-        input_names=['image'],
-        output_names=['prob'])
-    predictor = OfflinePredictor(pred_config)
-
-    from tensorpack.utils.fs import mkdir_p
-    result_dir = "test-from-dir"
-    visual_dir = os.path.join(result_dir,"visualization")
-    final_dir = os.path.join(result_dir,"final")
-    import shutil
-    shutil.rmtree(result_dir, ignore_errors=True)
-    mkdir_p(result_dir)
-    mkdir_p(visual_dir)
-    mkdir_p(final_dir)
-
-
-    logger.info("start validation....")
-
-    def mypredictor(input_img):
-        # input image: 1*H*W*3
-        # output : H*W*C
-        output = predictor(input_img[np.newaxis, :, :, :])
-        return output[0][0]
-
-    for i in tqdm(range(len(ll))):
-        filename = ll[i]
-        image = cv2.imread(os.path.join(args.test_dir,filename))
-        prediction = predict_scaler(image, mypredictor, scales=[0.5,0.75, 1, 1.25, 1.5], classes=CLASS_NUM, tile_size=CROP_SIZE, is_densecrf = False)
-        prediction = np.argmax(prediction, axis=2)
-        cv2.imwrite(os.path.join(final_dir,"{}".format(filename)), prediction)
-        cv2.imwrite(os.path.join(visual_dir, "{}".format(filename)), np.concatenate((image, visualize_label(prediction)), axis=1))
-
-
-
-
 
 class CalculateMIoU(Callback):
     def __init__(self, nb_class):
@@ -360,14 +320,14 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default="0", help='comma separated list of GPU(s) to use.')
     parser.add_argument('--base_dir', default="/data1/Dataset/UDD", help='base dir')
     parser.add_argument('--meta_dir', default="../metadata/UDD", help='meta dir')
-    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_train_0522/model-13500", help='load model')
+    parser.add_argument('--load', default="train_log/deeplabv2res101.pssd_train/model-27000", help='load model')
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')
     parser.add_argument('--output', help='fused output filename. default to out-fused.png')
     parser.add_argument('--validation', default="true", action='store_true', help='validate model on validation images')
     parser.add_argument('--test', action='store_true', help='generate test result')
-    parser.add_argument('--test_dir', default="/data1/Dataset/UDD", action='store_true', help='generate test result')
+    parser.add_argument('--test_dir', default=TEST_DIR, action='store_true', help='generate test result')
     args = parser.parse_args()
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -379,14 +339,3 @@ if __name__ == '__main__':
         run(args.load, args.run, args.output)
     elif args.validation:
          proceed_validation(args)
-    # elif args.test:
-    #     proceed_test(args)
-    #elif args.test_dir:
-    #    proceed_test_dir(args)
-    # else:
-    #     config = get_config(args.base_dir, args.meta_dir,args.batch_size)
-    #     if args.load:
-    #         config.session_init = get_model_loader(args.load)
-    #     launch_train_with_config(
-    #         config,
-    #         SyncMultiGPUTrainer(max(get_nr_gpu(), 1)))
