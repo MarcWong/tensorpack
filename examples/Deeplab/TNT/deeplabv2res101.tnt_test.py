@@ -36,7 +36,7 @@ lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
 batch_size = 1
 evaluate_every_n_epoch = 1
 
-TEST_DIR = '/data1/Dataset/Benchmark/tanksandtemples/test/Horse'
+TEST_DIR = '/data1/Dataset/Benchmark/tanksandtemples/test/Train'
 
 class Model(ModelDesc):
 
@@ -249,7 +249,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default="0", help='comma separated list of GPU(s) to use.')
     parser.add_argument('--base_dir', default="/data1/Dataset/aeroscapes", help='base dir')
     parser.add_argument('--meta_dir', default="../metadata/TNT", help='meta dir')
-    parser.add_argument('--load', default="train_log/deeplabv2res101.tnt_train/model-1350", help='load model')    
+    parser.add_argument('--load', default="train_log/deeplabv2res101.tnt_train/model-7200", help='load model')    
     parser.add_argument('--view', help='view dataset', action='store_true')
     parser.add_argument('--run', help='run model on images')
     parser.add_argument('--batch_size', type=int, default = batch_size, help='batch_size')
