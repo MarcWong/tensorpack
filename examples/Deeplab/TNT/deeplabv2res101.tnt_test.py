@@ -36,7 +36,7 @@ lr_multi_schedule = [('aspp.*_conv/W', 5),('aspp.*_conv/b',10)]
 batch_size = 1
 evaluate_every_n_epoch = 1
 
-TEST_DIR = '/data1/Dataset/Benchmark/tanksandtemples/test/Train'
+TEST_DIR = '/data1/Dataset/Benchmark/tanksandtemples/test/Francis'
 
 class Model(ModelDesc):
 
